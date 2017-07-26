@@ -41,9 +41,8 @@ Program that produces a comprehensive log on popular articles, top authors and d
 - create view errorCount as select date, round(((FAILViews * 100.0) / total), 2) as ErrorRate from joinedCount3. 
 
 ## License
-MIT License
 
-Copyright (c) [2017] [Byambasuren Ulziisaikhan]
+Copyright (c) 2017 Byambasuren Ulziisaikhan
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
