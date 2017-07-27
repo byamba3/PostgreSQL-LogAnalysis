@@ -1,44 +1,47 @@
 # Log Analysis by byamba3
-Program that produces a comprehensive log on popular articles, top authors and days with most errors from a news database using PSQL
-
-## Requirements
-- Vagrant
-- Linux VM
-- Python3
+This is a python program that makes PSQL queries from a news database to generate a log
+that displays the names and views of the top 3 articles, names and views of the most popular authors, and the days with most request errors. 
+The program should preferrably run inside a Linux Virtual Machine that supports Python, psycopg2, and PostgreSQL.
 
 ## How to run:
-- Run the Linux VM
-- Place the **logproducer.py** inside the **/vagrant** folder
-- Change directory to **/vagrant** on your VM
-- Run logproducer.py from the directory
+- Install VirtualBox from [here](https://www.virtualbox.org/wiki/Downloads) which will run your VM. Download Install the platform package for your operating system.
+- Install a VM environment that supports Python3, PostgreSQL, and psycopg2. Vagrant is recommended, and the **Vagrantfile** is included.
+- Clone the files in the repository in a folder called **vagrant** and extract the newsdata.zip file to the same directory.
+- Open up a terminal within the **vagrant** folder, and enter `vagrant up` then once finished, enter `vagrant ssh`.
+- Enter `cd /vagrant` to acess the shared folder
+- From there, if you want to run the Python progarm to produce the logs, enter `python3 logproducer.py` and you'll find a file called **Output.txt** within the **vagrant** folder on your local machine.
+- To access the database directly, type `psql news` and from there on you can see the tables with with `\dt` and use `SELECT` statemens.
 
 ## Views used:
 
-1. Top 3 Articles: 
+All the created views are found within the **create_views.sql** file. You can open this file in your favorite text editor.
 
-- create view pathviews as select path, count(*) as views from log where status = '200 OK' and length(path) > 1 group by path order by views desc
+```
+CREATE VIEW pathviews as 
+    SELECT replace(path, '/article/', '') as path, count(*) as views from log 
+    where status = '200 OK' and length(path) > 1 group by path;
 
-- create view u_pathviews as select replace(path, '/article/', '') as updatedPaths, views from pathviews
+CREATE VIEW articleViews as 
+    SELECT author, articles.title as title, views from articles join pathviews 
+    on articles.slug = pathviews.path;
 
-2. Popular authors:
+CREATE VIEW authorViews as 
+    SELECT author, sum(views) as TotalViews from articleViews 
+    group by author order by TotalViews desc;
 
-- create view pathviews as select path, count(*) as views from log where status = '200 OK' and length(path) > 1 group by path order by views desc
+CREATE VIEW TOTALcount as 
+    SELECT date(time) as date, count(*) as views from log 
+    group by date;
 
-- create view u_pathviews as select replace(path, '/article/', '') as updatedPaths, views from pathviews
+CREATE VIEW FAILcount as 
+    SELECT date(time) as date, count(*) as views from log 
+    where status = '404 NOT FOUND' group by date;
 
-- create view articleViews as select author, articles.title, views from articles join u_pathviews on articles.slug = u_pathviews.updatedPaths
-
-- create view authorViews as select author, sum(views) as TotalViews from articleViews group by author order by TotalViews desc
-
-3. Most request errors:
-
-- create view OKcount as select date(time) as date, count(*) as views from log where status = '200 OK' and length(path) > 1 group by date order by date desc
-
-- create view FAILcount as select date(time) as date, count(*) as views from log where status = '404 NOT FOUND' and length(path) > 1 group by date order by date desc
-
-- create view joinedCount as select OKcount.date as date, OKcount.views as OKViews, FAILcount.views as FAILViews, (COALESCE(OKcount.views,0) + COALESCE(FAILcount.views,0)) as total from OKcount left join FAILcount on OKcount.date = FAILcount.date
-
-- create view errorCount as select date, round(((FAILViews * 100.0) / total), 2) as ErrorRate from joinedCount3. 
+CREATE VIEW errorCount as 
+    SELECT TOTALcount.date, round(((FAILcount.views * 100.0) / 
+    TOTALcount.views), 2) as ErrorRate from TOTALcount left join FAILcount
+    on FAILcount.date = TOTALcount.date;
+```
 
 ## License
 
