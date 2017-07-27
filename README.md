@@ -16,8 +16,7 @@ The program should preferrably run inside a Linux Virtual Machine that supports 
 
 All the created views are found within the **create_views.sql** file. You can open this file in your favorite text editor.
 
-```
-CREATE VIEW pathviews as 
+```CREATE VIEW pathviews as 
     SELECT replace(path, '/article/', '') as path, count(*) as views from log 
     where status = '200 OK' and length(path) > 1 group by path;
 
